@@ -37,13 +37,41 @@ public class EventBusTest {
 	}
 
 	@Test
+	public void testGeneric() {
+		AtomicReference<String> value = new AtomicReference<>();
+
+		Object listener = new Object() {
+			@EventHandler
+			public void string(GenericEvent event) {
+				if (event.value instanceof String) {
+					value.set((String) event.value);
+				}
+
+				if (event.value instanceof Integer) {
+					value.set("Int: " + event.value);
+				}
+			}
+		};
+
+		bus.subscribe(listener);
+
+		assertNull(value.get());
+
+		bus.publish(new GenericEvent<>("String"));
+		assertEquals("String", value.get());
+
+		bus.publish(new GenericEvent<>(123));
+		assertEquals("Int: 123", value.get());
+	}
+
+	@Test
 	public void testIgnoreCancelled() {
-		AtomicReference<String> state = new AtomicReference<>();
+		AtomicReference<String> value = new AtomicReference<>();
 
 		Object listener = new Object() {
 			@EventHandler(ignoreCancelled = true)
 			public void listenNotCancelled(CancellableEvent event) {
-				state.set(event.value);
+				value.set(event.value);
 			}
 
 			@EventHandler(EventPriority.LOWEST)
@@ -56,13 +84,13 @@ public class EventBusTest {
 
 		bus.subscribe(listener);
 
-		assertNull(state.get());
+		assertNull(value.get());
 
 		bus.publish(new CancellableEvent("Do not cancel me please"));
-		assertEquals("Do not cancel me please", state.get());
+		assertEquals("Do not cancel me please", value.get());
 
 		bus.publish(new CancellableEvent("Cancel me!"));
-		assertEquals("Do not cancel me please", state.get());
+		assertEquals("Do not cancel me please", value.get());
 	}
 
 	@Test
@@ -159,6 +187,17 @@ public class EventBusTest {
 
 		public UpdateStateEvent(String state) {
 			this.state = state;
+		}
+
+	}
+
+
+	public static class GenericEvent<T> extends Event {
+
+		private final T value;
+
+		public GenericEvent(T value) {
+			this.value = value;
 		}
 
 	}

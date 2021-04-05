@@ -23,6 +23,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +41,7 @@ class EventBusImpl implements EventBus {
     private final Map<EventNamespace, Set<EventSubscription<?>>> byNamespace
             = new ConcurrentHashMap<>();
 
-    private final Map<Class<?>, EventSubscriptionStorage<?>> byEvent
+    private final Map<Type, EventSubscriptionStorage<?>> byEvent
             = new ConcurrentHashMap<>();
 
     @Override
@@ -59,6 +61,12 @@ class EventBusImpl implements EventBus {
 
             if (params.length != 1 || !Event.class.isAssignableFrom(params[0])) {
                 throw new IllegalStateException("Wrong parameter types");
+            }
+
+            Type param = method.getGenericParameterTypes()[0];
+
+            if (param instanceof ParameterizedType) {
+                throw new IllegalStateException("Generic as parameter is illegal");
             }
 
             Class<? extends Event> eventType = (Class<? extends Event>) params[0];
