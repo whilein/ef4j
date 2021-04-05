@@ -20,13 +20,13 @@ package com.github.lero4ka16.ef4j;
  * @author lero4ka16
  */
 final class EventBusSyncImpl extends EventBusImpl {
-	@Override
-	public synchronized void publish(Event event) {
-		super.publish(event);
-	}
+    @Override
+    public synchronized void publish(Event event) {
+        super.publish(event);
+    }
 
-	@Override
-	protected boolean isSynchronized() {
-		return true;
-	}
+    @Override
+    protected boolean isSynchronized() {
+        return true;
+    }
 }

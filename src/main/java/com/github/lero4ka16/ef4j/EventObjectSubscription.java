@@ -23,24 +23,24 @@ import java.util.List;
  */
 public final class EventObjectSubscription {
 
-	private final EventBus bus;
-	private final List<EventSubscription<?>> subscriptions;
+    private final EventBus bus;
+    private final List<EventSubscription<?>> subscriptions;
 
-	public EventObjectSubscription(EventBus bus, List<EventSubscription<?>> subscriptions) {
-		this.bus = bus;
-		this.subscriptions = subscriptions;
-	}
+    public EventObjectSubscription(EventBus bus, List<EventSubscription<?>> subscriptions) {
+        this.bus = bus;
+        this.subscriptions = subscriptions;
+    }
 
-	public EventBus getBus() {
-		return bus;
-	}
+    public EventBus getBus() {
+        return bus;
+    }
 
-	public List<EventSubscription<?>> getSubscriptions() {
-		return subscriptions;
-	}
+    public List<EventSubscription<?>> getSubscriptions() {
+        return subscriptions;
+    }
 
-	public void unsubscribe() {
-		bus.unsubscribe(this);
-	}
+    public void unsubscribe() {
+        bus.unsubscribe(this);
+    }
 
 }

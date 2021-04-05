@@ -23,6 +23,6 @@ public interface Cancellable {
 
     void setCancelled(boolean b);
 
-	boolean isCancelled();
+    boolean isCancelled();
 
 }

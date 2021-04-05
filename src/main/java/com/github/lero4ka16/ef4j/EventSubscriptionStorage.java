@@ -23,213 +23,213 @@ import java.util.Arrays;
  */
 final class EventSubscriptionStorage<E extends Event> {
 
-	private volatile InternalStorage<E> storage = new SingletonStorage<>();
+    private volatile InternalStorage<E> storage = new SingletonStorage<>();
 
-	public synchronized int getSize() {
-		return storage.getSize();
-	}
+    public synchronized int getSize() {
+        return storage.getSize();
+    }
 
-	public void publish(E event) {
-		storage.publish(event);
-	}
+    public void publish(E event) {
+        storage.publish(event);
+    }
 
-	public void postPublish(E event) {
-		storage.postPublish(event);
-	}
+    public void postPublish(E event) {
+        storage.postPublish(event);
+    }
 
-	public synchronized void add(EventSubscription<E> subscription) {
-		int size = storage.getSize();
+    public synchronized void add(EventSubscription<E> subscription) {
+        int size = storage.getSize();
 
-		if (size == 1) {
-			InternalStorage<E> oldStorage = storage;
-			storage = new ArrayStorage<>();
-			oldStorage.migrate(storage);
-		}
+        if (size == 1) {
+            InternalStorage<E> oldStorage = storage;
+            storage = new ArrayStorage<>();
+            oldStorage.migrate(storage);
+        }
 
-		storage.add(subscription);
-	}
+        storage.add(subscription);
+    }
 
-	public synchronized void remove(EventSubscription<E> subscription) {
-		storage.remove(subscription);
+    public synchronized void remove(EventSubscription<E> subscription) {
+        storage.remove(subscription);
 
-		int size = storage.getSize();
+        int size = storage.getSize();
 
-		if (size <= 1) {
-			InternalStorage<E> oldStorage = storage;
-			storage = new SingletonStorage<>();
+        if (size <= 1) {
+            InternalStorage<E> oldStorage = storage;
+            storage = new SingletonStorage<>();
 
-			if (size == 1) {
-				oldStorage.migrate(storage);
-			}
-		}
-	}
+            if (size == 1) {
+                oldStorage.migrate(storage);
+            }
+        }
+    }
 
-	interface InternalStorage<E extends Event> {
-		int getSize();
+    interface InternalStorage<E extends Event> {
+        int getSize();
 
-		void add(EventSubscription<E> subscription);
+        void add(EventSubscription<E> subscription);
 
-		void remove(EventSubscription<E> subscription);
+        void remove(EventSubscription<E> subscription);
 
-		void migrate(InternalStorage<E> storage);
+        void migrate(InternalStorage<E> storage);
 
-		void publish(E event);
+        void publish(E event);
 
-		void postPublish(E event);
+        void postPublish(E event);
 
-		default boolean isEmpty() {
-			return getSize() == 0;
-		}
-	}
+        default boolean isEmpty() {
+            return getSize() == 0;
+        }
+    }
 
-	@SuppressWarnings("unchecked")
-	static class ArrayStorage<E extends Event> implements InternalStorage<E> {
-		private volatile EventSubscription<E>[] content = new EventSubscription[8];
+    @SuppressWarnings("unchecked")
+    static class ArrayStorage<E extends Event> implements InternalStorage<E> {
+        private volatile EventSubscription<E>[] content = new EventSubscription[8];
 
-		private volatile int size;
-		private volatile int monitorOffset;
+        private volatile int size;
+        private volatile int monitorOffset;
 
-		@Override
-		public void publish(E event) {
-			for (int i = 0; i < monitorOffset; i++) {
-				EventSubscription<E> listener = content[i];
+        @Override
+        public void publish(E event) {
+            for (int i = 0; i < monitorOffset; i++) {
+                EventSubscription<E> listener = content[i];
 
-				if (listener != null) {
-					listener.handle(event);
-				}
-			}
-		}
+                if (listener != null) {
+                    listener.handle(event);
+                }
+            }
+        }
 
-		@Override
-		public void postPublish(E event) {
-			for (int i = monitorOffset; i < size; i++) {
-				EventSubscription<E> listener = content[i];
+        @Override
+        public void postPublish(E event) {
+            for (int i = monitorOffset; i < size; i++) {
+                EventSubscription<E> listener = content[i];
 
-				if (listener != null) {
-					listener.handle(event);
-				}
-			}
-		}
+                if (listener != null) {
+                    listener.handle(event);
+                }
+            }
+        }
 
-		@Override
-		public int getSize() {
-			return size;
-		}
+        @Override
+        public int getSize() {
+            return size;
+        }
 
-		@Override
-		public synchronized void add(EventSubscription<E> subscription) {
-			if (size >= content.length) {
-				content = Arrays.copyOf(content, size + 1);
-			}
+        @Override
+        public synchronized void add(EventSubscription<E> subscription) {
+            if (size >= content.length) {
+                content = Arrays.copyOf(content, size + 1);
+            }
 
-			for (int i = 0; i < size; i++) {
-				EventSubscription<E> at = content[i];
+            for (int i = 0; i < size; i++) {
+                EventSubscription<E> at = content[i];
 
-				if (content != null && at.compareTo(subscription) < 0) {
-					continue;
-				}
+                if (content != null && at.compareTo(subscription) < 0) {
+                    continue;
+                }
 
-				System.arraycopy(content, i, content, i + 1, content.length - i - 1);
+                System.arraycopy(content, i, content, i + 1, content.length - i - 1);
 
-				setSubscription(i, subscription);
-				return;
-			}
+                setSubscription(i, subscription);
+                return;
+            }
 
-			setSubscription(size, subscription);
-		}
+            setSubscription(size, subscription);
+        }
 
-		private synchronized void setSubscription(int index, EventSubscription<E> subscription) {
-			content[index] = subscription;
+        private synchronized void setSubscription(int index, EventSubscription<E> subscription) {
+            content[index] = subscription;
 
-			if (subscription.getPriority() != EventPriority.MONITOR) {
-				monitorOffset++;
-			}
+            if (subscription.getPriority() != EventPriority.MONITOR) {
+                monitorOffset++;
+            }
 
-			size++;
-		}
+            size++;
+        }
 
-		@Override
-		public synchronized void remove(EventSubscription<E> subscription) {
-			if (content == null) {
-				return;
-			}
+        @Override
+        public synchronized void remove(EventSubscription<E> subscription) {
+            if (content == null) {
+                return;
+            }
 
-			for (int i = 0; i < size; i++) {
-				EventListener<E> listener = content[i];
+            for (int i = 0; i < size; i++) {
+                EventListener<E> listener = content[i];
 
-				if (listener == subscription) {
-					size--;
-					content[i] = null;
+                if (listener == subscription) {
+                    size--;
+                    content[i] = null;
 
-					if (i != size) {
-						System.arraycopy(content, i + 1, content, i, content.length - i - 1);
-					}
+                    if (i != size) {
+                        System.arraycopy(content, i + 1, content, i, content.length - i - 1);
+                    }
 
-					if (subscription.getPriority() != EventPriority.MONITOR) {
-						monitorOffset--;
-					}
+                    if (subscription.getPriority() != EventPriority.MONITOR) {
+                        monitorOffset--;
+                    }
 
-					break;
-				}
-			}
-		}
+                    break;
+                }
+            }
+        }
 
-		@Override
-		public synchronized void migrate(InternalStorage<E> storage) {
-			for (int i = 0; i < size; i++) {
-				EventSubscription<E> subscription = content[i];
+        @Override
+        public synchronized void migrate(InternalStorage<E> storage) {
+            for (int i = 0; i < size; i++) {
+                EventSubscription<E> subscription = content[i];
 
-				if (subscription != null) {
-					storage.add(subscription);
-				}
-			}
-		}
-	}
+                if (subscription != null) {
+                    storage.add(subscription);
+                }
+            }
+        }
+    }
 
-	static class SingletonStorage<E extends Event> implements InternalStorage<E> {
+    static class SingletonStorage<E extends Event> implements InternalStorage<E> {
 
-		private volatile EventSubscription<E> subscription;
+        private volatile EventSubscription<E> subscription;
 
-		@Override
-		public void publish(E event) {
-			if (subscription != null && subscription.getPriority() != EventPriority.MONITOR) {
-				subscription.handle(event);
-			}
-		}
+        @Override
+        public void publish(E event) {
+            if (subscription != null && subscription.getPriority() != EventPriority.MONITOR) {
+                subscription.handle(event);
+            }
+        }
 
-		@Override
-		public void postPublish(E event) {
-			if (subscription != null && subscription.getPriority() == EventPriority.MONITOR) {
-				subscription.handle(event);
-			}
-		}
+        @Override
+        public void postPublish(E event) {
+            if (subscription != null && subscription.getPriority() == EventPriority.MONITOR) {
+                subscription.handle(event);
+            }
+        }
 
-		@Override
-		public synchronized int getSize() {
-			return subscription == null ? 0 : 1;
-		}
+        @Override
+        public synchronized int getSize() {
+            return subscription == null ? 0 : 1;
+        }
 
-		@Override
-		public synchronized void add(EventSubscription<E> subscription) {
-			if (this.subscription != null) {
-				throw new IllegalStateException("Singleton is full");
-			}
+        @Override
+        public synchronized void add(EventSubscription<E> subscription) {
+            if (this.subscription != null) {
+                throw new IllegalStateException("Singleton is full");
+            }
 
-			this.subscription = subscription;
-		}
+            this.subscription = subscription;
+        }
 
-		@Override
-		public synchronized void remove(EventSubscription<E> subscription) {
-			if (this.subscription == subscription) {
-				this.subscription = null;
-			}
-		}
+        @Override
+        public synchronized void remove(EventSubscription<E> subscription) {
+            if (this.subscription == subscription) {
+                this.subscription = null;
+            }
+        }
 
-		@Override
-		public synchronized void migrate(InternalStorage<E> storage) {
-			if (subscription != null) {
-				storage.add(subscription);
-			}
-		}
-	}
+        @Override
+        public synchronized void migrate(InternalStorage<E> storage) {
+            if (subscription != null) {
+                storage.add(subscription);
+            }
+        }
+    }
 }

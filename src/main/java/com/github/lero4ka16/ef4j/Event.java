@@ -20,6 +20,6 @@ package com.github.lero4ka16.ef4j;
  * @author lero4ka16
  */
 public abstract class Event {
-	public void postPublish(EventBus bus) {
-	}
+    public void postPublish(EventBus bus) {
+    }
 }

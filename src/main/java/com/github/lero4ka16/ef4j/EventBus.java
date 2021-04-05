@@ -21,28 +21,28 @@ package com.github.lero4ka16.ef4j;
  */
 public interface EventBus extends EventNamespace {
 
-	static EventBus create() {
-		return create(true);
-	}
+    static EventBus create() {
+        return create(true);
+    }
 
-	static EventBus create(boolean isSynchronized) {
-		return isSynchronized
-				? new EventBusSyncImpl()
-				: new EventBusImpl();
-	}
+    static EventBus create(boolean isSynchronized) {
+        return isSynchronized
+                ? new EventBusSyncImpl()
+                : new EventBusImpl();
+    }
 
-	EventObjectSubscription subscribe(Object listener);
+    EventObjectSubscription subscribe(Object listener);
 
-	EventObjectSubscription subscribe(EventNamespace namespace, Object listener);
+    EventObjectSubscription subscribe(EventNamespace namespace, Object listener);
 
-	void unsubscribe(EventSubscription<?> subscription);
+    void unsubscribe(EventSubscription<?> subscription);
 
-	void unsubscribe(EventObjectSubscription subscription);
+    void unsubscribe(EventObjectSubscription subscription);
 
-	void unsubscribeAll(EventNamespace namespace);
+    void unsubscribeAll(EventNamespace namespace);
 
-	void unsubscribeAll();
+    void unsubscribeAll();
 
-	void publish(Event event);
+    void publish(Event event);
 
 }

@@ -24,48 +24,48 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class AsyncEvent<Self extends AsyncEvent<Self>> extends Event {
 
-	private final AsyncCallback<Self> callback;
+    private final AsyncCallback<Self> callback;
 
-	private final AtomicInteger intents = new AtomicInteger();
-	private final AtomicBoolean published = new AtomicBoolean();
+    private final AtomicInteger intents = new AtomicInteger();
+    private final AtomicBoolean published = new AtomicBoolean();
 
-	public AsyncEvent(AsyncCallback<Self> callback) {
-		this.callback = callback;
-	}
+    public AsyncEvent(AsyncCallback<Self> callback) {
+        this.callback = callback;
+    }
 
-	public void addIntent() {
-		if (published.get()) {
-			throw new IllegalStateException("Event already published");
-		}
+    public void addIntent() {
+        if (published.get()) {
+            throw new IllegalStateException("Event already published");
+        }
 
-		intents.incrementAndGet();
-	}
+        intents.incrementAndGet();
+    }
 
-	@SuppressWarnings("unchecked")
-	public void doneIntent() {
-		if (intents.get() == 0) {
-			throw new IllegalStateException("No remaining intents");
-		}
+    @SuppressWarnings("unchecked")
+    public void doneIntent() {
+        if (intents.get() == 0) {
+            throw new IllegalStateException("No remaining intents");
+        }
 
-		int now = intents.decrementAndGet();
+        int now = intents.decrementAndGet();
 
-		if (now == 0 && published.get()) {
-			callback.done((Self) this);
-			postDone();
-		}
-	}
+        if (now == 0 && published.get()) {
+            callback.done((Self) this);
+            postDone();
+        }
+    }
 
-	@SuppressWarnings("unchecked")
-	@Override
-	public final void postPublish(EventBus bus) {
-		published.set(true);
+    @SuppressWarnings("unchecked")
+    @Override
+    public final void postPublish(EventBus bus) {
+        published.set(true);
 
-		if (intents.get() == 0) {
-			callback.done((Self) this);
-			postDone();
-		}
-	}
+        if (intents.get() == 0) {
+            callback.done((Self) this);
+            postDone();
+        }
+    }
 
-	protected void postDone() {
-	}
+    protected void postDone() {
+    }
 }

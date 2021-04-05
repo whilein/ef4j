@@ -23,22 +23,22 @@ public interface EventListener<E extends Event> {
 
     void handle(E event);
 
-	class Sync<E extends Event> implements EventListener<E> {
+    class Sync<E extends Event> implements EventListener<E> {
 
-		private final Object mutex;
-		private final EventListener<E> listener;
+        private final Object mutex;
+        private final EventListener<E> listener;
 
-		public Sync(Object mutex, EventListener<E> listener) {
-			this.mutex = mutex;
-			this.listener = listener;
-		}
+        public Sync(Object mutex, EventListener<E> listener) {
+            this.mutex = mutex;
+            this.listener = listener;
+        }
 
-		@Override
-		public void handle(E event) {
-			synchronized (mutex) {
-				listener.handle(event);
-			}
-		}
-	}
+        @Override
+        public void handle(E event) {
+            synchronized (mutex) {
+                listener.handle(event);
+            }
+        }
+    }
 
 }

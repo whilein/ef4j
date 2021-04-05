@@ -20,11 +20,11 @@ package com.github.lero4ka16.ef4j;
  * @author lero4ka16
  */
 public enum EventPriority {
-	LOWEST,
-	LOW,
-	NORMAL,
-	HIGH,
-	HIGHEST,
-	MONITOR
+    LOWEST,
+    LOW,
+    NORMAL,
+    HIGH,
+    HIGHEST,
+    MONITOR
 
 }
