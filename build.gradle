@@ -6,7 +6,7 @@ plugins {
 
 group 'com.github.lero4ka16'
 description 'Simple and lightweight event framework'
-version findProperty('github.tag') ?: 'dev'
+version findProperty('github.tag') ?: ''
 archivesBaseName = 'ef4j'
 
 repositories {
@@ -85,7 +85,7 @@ publishing {
 
 
 signing {
-    //sign publishing.publications
+    sign publishing.publications
 }
 
 
