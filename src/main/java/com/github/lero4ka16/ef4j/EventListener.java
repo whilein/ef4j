@@ -21,7 +21,7 @@ package com.github.lero4ka16.ef4j;
  */
 public interface EventListener<E extends Event> {
 
-	void handle(E event);
+    void handle(E event);
 
 	class Sync<E extends Event> implements EventListener<E> {
 

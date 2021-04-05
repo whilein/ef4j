@@ -28,10 +28,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 public @interface EventHandler {
 
-	EventPriority value() default EventPriority.NORMAL;
+    EventPriority value() default EventPriority.NORMAL;
 
-	boolean concurrent() default false;
+    boolean concurrent() default false;
 
-	boolean ignoreCancelled() default false;
+    boolean ignoreCancelled() default false;
 
 }

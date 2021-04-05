@@ -21,63 +21,63 @@ package com.github.lero4ka16.ef4j;
  */
 public final class EventSubscription<E extends Event> implements EventListener<E>, Comparable<EventSubscription<E>> {
 
-	private final EventBus bus;
-	private final EventNamespace namespace;
+    private final EventBus bus;
+    private final EventNamespace namespace;
 
-	private final Class<E> type;
+    private final Class<E> type;
 
-	private final EventPriority priority;
-	private final EventListener<E> listener;
+    private final EventPriority priority;
+    private final EventListener<E> listener;
 
-	private final boolean ignoreCancelled;
+    private final boolean ignoreCancelled;
 
-	public EventSubscription(EventBus bus, EventNamespace namespace, EventPriority priority,
-	                         Class<E> type, EventListener<E> listener,
-	                         boolean ignoreCancelled) {
-		this.bus = bus;
-		this.namespace = namespace;
-		this.type = type;
-		this.priority = priority;
-		this.listener = listener;
-		this.ignoreCancelled = ignoreCancelled;
-	}
+    public EventSubscription(EventBus bus, EventNamespace namespace, EventPriority priority,
+                             Class<E> type, EventListener<E> listener,
+                             boolean ignoreCancelled) {
+        this.bus = bus;
+        this.namespace = namespace;
+        this.type = type;
+        this.priority = priority;
+        this.listener = listener;
+        this.ignoreCancelled = ignoreCancelled;
+    }
 
-	public EventPriority getPriority() {
-		return priority;
-	}
+    public EventPriority getPriority() {
+        return priority;
+    }
 
-	public EventBus getBus() {
-		return bus;
-	}
+    public EventBus getBus() {
+        return bus;
+    }
 
-	public EventNamespace getNamespace() {
-		return namespace;
-	}
+    public EventNamespace getNamespace() {
+        return namespace;
+    }
 
-	public Class<E> getType() {
-		return type;
-	}
+    public Class<E> getType() {
+        return type;
+    }
 
-	public void unsubscribe() {
-		bus.unsubscribe(this);
-	}
+    public void unsubscribe() {
+        bus.unsubscribe(this);
+    }
 
 
-	@Override
-	public void handle(E event) {
-		if (ignoreCancelled && event instanceof Cancellable) {
-			Cancellable cancellable = (Cancellable) event;
+    @Override
+    public void handle(E event) {
+        if (ignoreCancelled && event instanceof Cancellable) {
+            Cancellable cancellable = (Cancellable) event;
 
-			if (cancellable.isCancelled()) {
-				return;
-			}
-		}
+            if (cancellable.isCancelled()) {
+                return;
+            }
+        }
 
-		listener.handle(event);
-	}
+        listener.handle(event);
+    }
 
-	@Override
-	public int compareTo(EventSubscription<E> o) {
-		return priority.compareTo(o.priority);
-	}
+    @Override
+    public int compareTo(EventSubscription<E> o) {
+        return priority.compareTo(o.priority);
+    }
 }

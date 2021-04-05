@@ -21,6 +21,6 @@ package com.github.lero4ka16.ef4j;
  */
 public interface AsyncCallback<Event extends AsyncEvent<Event>> {
 
-	void done(Event event);
+    void done(Event event);
 
 }

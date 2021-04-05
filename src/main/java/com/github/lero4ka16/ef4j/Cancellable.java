@@ -21,7 +21,7 @@ package com.github.lero4ka16.ef4j;
  */
 public interface Cancellable {
 
-	void setCancelled(boolean b);
+    void setCancelled(boolean b);
 
 	boolean isCancelled();
 
