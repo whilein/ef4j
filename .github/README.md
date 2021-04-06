@@ -89,7 +89,7 @@ There are 6 types of priority:
     <dependency>
         <groupId>com.github.lero4ka16</groupId>
         <artifactId>ef4j</artifactId>
-        <version>1.0.0</version>
+        <version>1.1.0</version>
     </dependency>
 </dependencies>
 ```
@@ -97,7 +97,7 @@ There are 6 types of priority:
 ### Gradle
 ```groovy
 dependencies {
-    implementation 'com.github.lero4ka16:ef4j:1.0.0'
+    implementation 'com.github.lero4ka16:ef4j:1.1.0'
 }
 ```
 
