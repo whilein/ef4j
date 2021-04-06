@@ -55,7 +55,7 @@ class MyEvent extends Event {
   }
 }
 
-EventBus bus = EventBus.create();
+EventBus bus = new ConcurrentEventBus();
 
 // register listener
 bus.subscribe(new MyListener());

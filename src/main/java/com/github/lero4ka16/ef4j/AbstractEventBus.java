@@ -30,114 +30,35 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 /**
  * @author lero4ka16
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-class EventBusImpl implements EventBus {
+public abstract class AbstractEventBus implements EventBus {
 
-    private final Map<EventNamespace, Set<EventSubscription<?>>> byNamespace
-            = new ConcurrentHashMap<>();
+    private final boolean isSynchronized;
 
-    private final Map<Type, EventSubscriptionStorage<?>> byEvent
-            = new ConcurrentHashMap<>();
+    private final Map<EventNamespace, Set<EventSubscription<?>>> byNamespace;
+    private final Map<Type, EventSubscriptionStorage<?>> byEvent;
 
-    @Override
-    public EventObjectSubscription subscribe(EventNamespace namespace, Object listener) {
-        Class<?> cls = listener.getClass();
+    private final Supplier<Set<EventSubscription<?>>> byNamespaceSetFactory;
 
-        List<EventSubscription<?>> subscriptions = new ArrayList<>();
-
-        for (Method method : cls.getMethods()) {
-            EventHandler handler = method.getAnnotation(EventHandler.class);
-
-            if (handler == null) {
-                continue;
-            }
-
-            Class<?>[] params = method.getParameterTypes();
-
-            if (params.length != 1 || !Event.class.isAssignableFrom(params[0])) {
-                throw new IllegalStateException("Wrong parameter types");
-            }
-
-            Type param = method.getGenericParameterTypes()[0];
-
-            if (param instanceof ParameterizedType) {
-                throw new IllegalStateException("Generic as parameter is illegal");
-            }
-
-            Class<? extends Event> eventType = (Class<? extends Event>) params[0];
-
-            EventListener createdListener;
-
-            try {
-                MethodHandles.Lookup lookup = PrivateLookup.privateIn(method.getDeclaringClass());
-
-                MethodType type = MethodType.methodType(void.class, eventType);
-                MethodHandle handle = lookup.findVirtual(method.getDeclaringClass(), method.getName(), type);
-
-                CallSite callSite = LambdaMetafactory.metafactory(
-                        lookup, "handle",
-                        MethodType.methodType(EventListener.class, method.getDeclaringClass()),
-                        MethodType.methodType(void.class, Event.class),
-                        handle, type
-                );
-
-                createdListener = (EventListener<?>) callSite.getTarget().bindTo(listener).invokeExact();
-            } catch (Throwable t) {
-                throw new RuntimeException(t);
-            }
-
-            if (!handler.concurrent() && !isSynchronized()) {
-                createdListener = new EventListener.Sync(this, createdListener);
-            }
-
-            EventSubscription<? extends Event> subscription = new EventSubscription<>(
-                    this, namespace, handler.value(), eventType, createdListener, handler.ignoreCancelled()
-            );
-
-            addByEvent(subscription);
-            addByNamespace(subscription);
-
-            subscriptions.add(subscription);
-        }
-
-        return new EventObjectSubscription(this, Collections.unmodifiableList(subscriptions));
-    }
-
-    protected boolean isSynchronized() {
-        return false;
-    }
-
-    @Override
-    public EventObjectSubscription subscribe(Object listener) {
-        return subscribe(this, listener);
+    public AbstractEventBus(boolean isSynchronized,
+                            Map<EventNamespace, Set<EventSubscription<?>>> byNamespace,
+                            Map<Type, EventSubscriptionStorage<?>> byEvent,
+                            Supplier<Set<EventSubscription<?>>> byNamespaceSetFactory) {
+        this.isSynchronized = isSynchronized;
+        this.byNamespace = byNamespace;
+        this.byEvent = byEvent;
+        this.byNamespaceSetFactory = byNamespaceSetFactory;
     }
 
     @Override
     public void unsubscribe(EventSubscription<?> subscription) {
         removeByEvent(subscription);
         removeByNamespace(subscription);
-    }
-
-    private void addByNamespace(EventSubscription<?> subscription) {
-        Set<EventSubscription<?>> subscriptions = byNamespace.computeIfAbsent(
-                subscription.getNamespace(),
-                $ -> ConcurrentHashMap.newKeySet()
-        );
-
-        subscriptions.add(subscription);
-    }
-
-    private void addByEvent(EventSubscription<?> subscription) {
-        EventSubscriptionStorage subscriptions = byEvent.computeIfAbsent(
-                subscription.getType(), $ -> new EventSubscriptionStorage<>()
-        );
-
-        subscriptions.add(subscription);
     }
 
     private void removeByEvent(EventSubscription<?> subscription) {
@@ -186,13 +107,6 @@ class EventBusImpl implements EventBus {
     }
 
     @Override
-    public void unsubscribe(EventObjectSubscription objectSubscription) {
-        for (EventSubscription<?> subscription : objectSubscription.getSubscriptions()) {
-            subscription.unsubscribe();
-        }
-    }
-
-    @Override
     public void publish(Event event) {
         EventSubscriptionStorage subscriptions = byEvent.get(event.getClass());
 
@@ -204,6 +118,97 @@ class EventBusImpl implements EventBus {
 
         if (subscriptions != null) {
             subscriptions.postPublish(event);
+        }
+    }
+
+    protected void register(EventSubscription<? extends Event> subscription) {
+        EventSubscriptionStorage storage = byEvent.computeIfAbsent(
+                subscription.getType(),
+                $ -> new EventSubscriptionStorage<>()
+        );
+
+        storage.add(subscription);
+
+        Set<EventSubscription<?>> subscriptions = byNamespace.computeIfAbsent(
+                subscription.getNamespace(),
+                $ -> byNamespaceSetFactory.get()
+        );
+
+        subscriptions.add(subscription);
+    }
+
+    @Override
+    public EventObjectSubscription subscribe(EventNamespace namespace, Object listener) {
+        Class<?> cls = listener.getClass();
+
+        List<EventSubscription<?>> subscriptions = new ArrayList<>();
+
+        for (Method method : cls.getMethods()) {
+            EventHandler handler = method.getAnnotation(EventHandler.class);
+
+            if (handler == null) {
+                continue;
+            }
+
+            Class<?>[] params = method.getParameterTypes();
+
+            if (params.length != 1 || !Event.class.isAssignableFrom(params[0])) {
+                throw new IllegalStateException("Wrong parameter types");
+            }
+
+            Type param = method.getGenericParameterTypes()[0];
+
+            if (param instanceof ParameterizedType) {
+                throw new IllegalStateException("Generic as parameter is illegal");
+            }
+
+            Class<? extends Event> eventType = (Class<? extends Event>) params[0];
+
+            EventListener createdListener;
+
+            try {
+                MethodHandles.Lookup lookup = PrivateLookup.privateIn(method.getDeclaringClass());
+
+                MethodType type = MethodType.methodType(void.class, eventType);
+                MethodHandle handle = lookup.findVirtual(method.getDeclaringClass(), method.getName(), type);
+
+                CallSite callSite = LambdaMetafactory.metafactory(
+                        lookup, "handle",
+                        MethodType.methodType(EventListener.class, method.getDeclaringClass()),
+                        MethodType.methodType(void.class, Event.class),
+                        handle, type
+                );
+
+                createdListener = (EventListener<?>) callSite.getTarget().bindTo(listener).invokeExact();
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+
+            if (!handler.concurrent() && !isSynchronized) {
+                createdListener = new EventListener.Sync(this, createdListener);
+            }
+
+            EventSubscription<? extends Event> subscription = new EventSubscription<>(
+                    this, namespace, handler.value(), eventType, createdListener, handler.ignoreCancelled()
+            );
+
+            register(subscription);
+
+            subscriptions.add(subscription);
+        }
+
+        return new EventObjectSubscription(this, Collections.unmodifiableList(subscriptions));
+    }
+
+    @Override
+    public EventObjectSubscription subscribe(Object listener) {
+        return subscribe(this, listener);
+    }
+
+    @Override
+    public void unsubscribe(EventObjectSubscription objectSubscription) {
+        for (EventSubscription<?> subscription : objectSubscription.getSubscriptions()) {
+            subscription.unsubscribe();
         }
     }
 

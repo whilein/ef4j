@@ -16,23 +16,21 @@
 
 package com.github.lero4ka16.ef4j;
 
+import java.util.HashMap;
+import java.util.HashSet;
+
 /**
+ * <code>UnsafeEventBus</code> isn't thread safe
+ * <p>
+ * Use {@link SyncEventBus} or {@link ConcurrentEventBus} instead,
+ * if you want thread-safety
+ *
  * @author lero4ka16
  */
-public interface EventBus extends EventNamespace {
+public final class SimpleEventBus extends AbstractEventBus {
 
-    EventObjectSubscription subscribe(Object listener);
-
-    EventObjectSubscription subscribe(EventNamespace namespace, Object listener);
-
-    void unsubscribe(EventSubscription<?> subscription);
-
-    void unsubscribe(EventObjectSubscription subscription);
-
-    void unsubscribeAll(EventNamespace namespace);
-
-    void unsubscribeAll();
-
-    void publish(Event event);
+    public SimpleEventBus() {
+        super(false, new HashMap<>(), new HashMap<>(), HashSet::new);
+    }
 
 }

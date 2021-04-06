@@ -16,17 +16,14 @@
 
 package com.github.lero4ka16.ef4j;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * @author lero4ka16
  */
-final class EventBusSyncImpl extends EventBusImpl {
-    @Override
-    public synchronized void publish(Event event) {
-        super.publish(event);
-    }
+public final class ConcurrentEventBus extends AbstractEventBus {
 
-    @Override
-    protected boolean isSynchronized() {
-        return true;
+    public ConcurrentEventBus() {
+        super(false, new ConcurrentHashMap<>(), new ConcurrentHashMap<>(), ConcurrentHashMap::newKeySet);
     }
 }

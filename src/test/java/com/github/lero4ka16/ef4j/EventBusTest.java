@@ -33,7 +33,7 @@ public class EventBusTest {
 
 	@BeforeEach
 	public void setup() {
-		bus = EventBus.create();
+		bus = new SimpleEventBus();
 	}
 
 	@Test
